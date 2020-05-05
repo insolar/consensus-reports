@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.HtmlTitle}}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.7.0/echarts.js"></script>
+
+    <style>
+        #charts{display: flex; flex-direction: row; flex-wrap: wrap;}
+        .item{height: 40vh; width: 50%; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="charts"></div>
+</div>
+
+<script>
+    const chartsContainer = document.getElementById('charts');
+
+    const seriesName = (q) => {
+        return q + 'quantile';
+    }
+
+    const addChart = (name, quantiles, networkSizes) => {
+        const option = {
+            title: {
+                id: name,
+                text: name + " description",
+                // subtext: 'description',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+            },
+            // grid: {
+            //     left: '3%',
+            //     right: '4%',
+            //     bottom: '3%',
+            //     containLabel: true
+            // },
+            toolbox: {
+                feature: {
+                    saveAsImage: {title: 'Save as PNG'}
+                }
+            },
+            legend: {
+                top: '25',
+                data: quantiles.map(q => seriesName(q))
+            },
+            xAxis: {
+                name: 'Network size',
+                nameLocation: 'center',
+                data: networkSizes // network sizes
+            },
+            yAxis: {type: 'value', name: 'Unit name'},
+            series: quantiles.map(q => {
+                return {
+                    name: seriesName(q),
+                    type: 'line',
+                    data: [54, 204, 364, 140, 104, 204].map(v => Math.floor(Math.random() * Math.floor(100))) , // metric record value
+                    // markLine: { // red flag
+                    //     silent: true,
+                    //     data: [{yAxis: 100}, {yAxis: 300}]
+                    // }
+                }
+            })
+        };
+
+        const chartDiv = document.createElement('div');
+        chartDiv.setAttribute('id', name);
+        chartDiv.setAttribute('class', 'item');
+        const child = chartsContainer.appendChild(chartDiv);
+
+        const chart = echarts.init(chartDiv);
+        chart.setOption(option);
+    }
+
+    var jsonConfig = JSON.parse('{"charts": ["sent_traffic_per_node", "recv_traffic_per_node", "consensus_round_duration", "aa"],"quantiles": ["0.5", "0.8", "0.9"]}')
+    var jsonData = JSON.parse('[{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5}]');
+
+    const networkSizes = [5, 7, 10, 15, 20, 50];
+
+    jsonConfig.charts.forEach(chart => addChart(chart, jsonConfig.quantiles, networkSizes))
+
+
+</script>
+
+</body>
+</html>
