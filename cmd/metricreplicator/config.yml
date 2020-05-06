@@ -1,0 +1,19 @@
+quantiles:
+  - "0.5"
+  - "0.8"
+  - "0.95"
+  - "0.99"
+tmp_directory: "/tmp/metricreplicator"
+prometheus_host: "http://localhost:9090"
+ranges:
+  - start_time: 1588724818
+    interval: "2m"
+    network_properties:
+      - name: "network_size"
+        value: "5"
+webdav:
+  url: "https://webdav.yandex.ru"
+  user: ""
+  password: ""
+  timeout: "1m"
+commit_hash: "fake2"
