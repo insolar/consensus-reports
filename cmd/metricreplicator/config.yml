@@ -5,12 +5,22 @@ quantiles:
   - "0.99"
 tmp_directory: "/tmp/metricreplicator"
 prometheus_host: "http://localhost:9090"
-ranges:
-  - start_time: 1588724818
-    interval: "2m"
-    network_properties:
-      - name: "network_size"
-        value: "5"
+groups:
+  - description: "Network size grows with fixed latency"
+    network:
+      - name: "latency"
+        value: "50ms"
+    ranges:
+      - start_time: 1588724818
+        interval: "5m"
+        props:
+          - name: "network_size"
+            value: "5"
+      - start_time: 1588724818
+        interval: "3m"
+        props:
+          - name: "network_size"
+            value: "10"
 webdav:
   url: "https://webdav.yandex.ru"
   user: ""

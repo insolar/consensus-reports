@@ -14,6 +14,7 @@ import (
 
 func main() {
 	cfgPath := pflag.String("cfg", "", "Path to cfg file")
+	removeAfter := pflag.Bool("rm", true, "Option to remove tmp dir after work")
 	pflag.Parse()
 
 	if *cfgPath == "" {
@@ -22,7 +23,7 @@ func main() {
 
 	cfg, err := middleware.NewConfig(*cfgPath)
 	if err != nil {
-
+		log.Fatalf("failed to init config: %v", err)
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -34,23 +35,25 @@ func main() {
 		log.Fatalf("failed to init replicator: %v", err)
 	}
 
-	if err := Run(repl, cfg); err != nil {
+	if err := Run(repl, cfg, *removeAfter); err != nil {
 		log.Fatalf("failed to replicate metrics: %v", err)
 	}
 
 	fmt.Println("Done!")
 }
 
-func Run(repl replicator.Replicator, cfg middleware.Config) error {
+func Run(repl replicator.Replicator, cfg middleware.Config, removeAfter bool) error {
 	cleanDir, err := metricreplicator.MakeTmpDir(cfg.TmpDir)
-	defer cleanDir()
+	if removeAfter {
+		defer cleanDir()
+	}
 	if err != nil {
 		return err
 	}
 
 	ctx := context.Background()
 
-	files, charts, err := repl.GrabRecords(ctx, cfg.Quantiles, middleware.RangesToReplicatorPeriods(cfg.Ranges))
+	files, charts, err := repl.GrabRecords(ctx, cfg.Quantiles, middleware.GroupsToReplicatorPeriods(cfg.Groups))
 	if err != nil {
 		return err
 	}

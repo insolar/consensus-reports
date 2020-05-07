@@ -13,10 +13,12 @@ type Replicator interface {
 }
 
 type PeriodInfo struct {
-	Start      time.Time
-	End        time.Time
-	Interval   time.Duration
-	Properties []PeriodProperty
+	Start       time.Time
+	End         time.Time
+	Interval    time.Duration
+	Properties  []PeriodProperty
+	Network     []PeriodProperty
+	Description string
 }
 
 type OutputConfig struct {

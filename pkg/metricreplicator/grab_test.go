@@ -38,13 +38,15 @@ func TestReplicator_GrabRecords(t *testing.T) {
 			Start:      time.Now(),
 			End:        time.Now().Add(5 * time.Second),
 			Interval:   5 * time.Second,
+			Network:    []replicator.PeriodProperty{{Name: "latency", Value: "50ms"}},
 			Properties: []replicator.PeriodProperty{{Name: "network_size", Value: "5"}},
 		},
 		{
-			Start:      time.Now().Add(10 * time.Second),
-			End:        time.Now().Add(10 * time.Second).Add(5 * time.Second),
-			Interval:   5 * time.Second,
-			Properties: []replicator.PeriodProperty{{Name: "network_size", Value: "10"}},
+			Start:       time.Now().Add(10 * time.Second),
+			End:         time.Now().Add(10 * time.Second).Add(5 * time.Second),
+			Interval:    5 * time.Second,
+			Properties:  []replicator.PeriodProperty{{Name: "network_size", Value: "10"}},
+			Description: "descr",
 		},
 	}
 

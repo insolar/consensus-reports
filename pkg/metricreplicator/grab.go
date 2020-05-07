@@ -28,9 +28,11 @@ type NetworkProperty struct {
 }
 
 type ResultData struct {
-	Warnings          []string          `json:"warnings"`
-	Records           []RecordInfo      `json:"records"`
-	NetworkProperties []NetworkProperty `json:"network_properties"`
+	Warnings    []string          `json:"warnings"`
+	Records     []RecordInfo      `json:"records"`
+	Network     []NetworkProperty `json:"network"`
+	Properties  []NetworkProperty `json:"properties"`
+	Description string            `json:"description"`
 }
 
 func toNetworkProperties(props []replicator.PeriodProperty) []NetworkProperty {
@@ -134,9 +136,11 @@ func (repl Replicator) GrabRecordsByPeriod(ctx context.Context, quantiles []stri
 	filename := getFilename(period)
 
 	result := ResultData{
-		Warnings:          allWarns,
-		Records:           records,
-		NetworkProperties: toNetworkProperties(period.Properties),
+		Warnings:    allWarns,
+		Records:     records,
+		Properties:  toNetworkProperties(period.Properties),
+		Network:     toNetworkProperties(period.Network),
+		Description: period.Description,
 	}
 
 	rawMsg, marshalErr := json.Marshal(result)
