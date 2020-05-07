@@ -1,9 +1,10 @@
-package prometheus
+package metricreplicator
 
 import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/pkg/errors"
@@ -40,11 +41,13 @@ func (repl Replicator) UploadFiles(ctx context.Context, cfg replicator.LoaderCon
 }
 
 func (repl Replicator) saveDataToFile(data []byte, filename string) error {
-	if _, err := os.Stat(filename); err == nil {
-		return errors.Errorf("file already exists: %s", filename)
+	filePath := repl.TmpDir + "/" + filename
+
+	if _, err := os.Stat(filePath); err == nil {
+		return errors.Errorf("file already exists: %s", filePath)
 	}
 
-	recordFile, createErr := os.Create(filename)
+	recordFile, createErr := os.Create(filePath)
 	if createErr != nil {
 		return errors.Wrap(createErr, "failed to create file")
 	}
@@ -67,4 +70,18 @@ func (repl Replicator) MakeConfigFile(ctx context.Context, cfg replicator.Output
 		return errors.Wrap(err, "failed to save config file")
 	}
 	return nil
+}
+
+func MakeTmpDir(dirname string) (func(), error) {
+	if err := os.Mkdir(dirname, 0777); err != nil {
+		return func() {}, errors.Wrap(err, "failed to create tmp dir")
+	}
+
+	removeFunc := func() {
+		if err := os.RemoveAll(dirname); err != nil {
+			log.Printf("failed to remove tmp dir: %v", err)
+		}
+	}
+
+	return removeFunc, nil
 }

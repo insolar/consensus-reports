@@ -1,4 +1,4 @@
-package prometheus
+package metricreplicator
 
 import (
 	"context"
@@ -61,7 +61,7 @@ func (repl Replicator) queryVector(ctx context.Context, query string, ts time.Ti
 	return float64(records[0].Value), warnings, nil
 }
 
-func (repl Replicator) grabRecord(ctx context.Context, query string, ts time.Time, property ConsensusProperty, quantile string) (RecordInfo, []string, error) {
+func (repl Replicator) grabRecord(ctx context.Context, query string, ts time.Time, property consensusProperty, quantile string) (RecordInfo, []string, error) {
 	value, warnings, grabErr := repl.queryVector(ctx, query, ts)
 	if grabErr != nil {
 		return RecordInfo{}, []string{}, errors.Wrap(grabErr, fmt.Sprintf("failed to get result for query: `%s`", query))

@@ -1,4 +1,4 @@
-package prometheus
+package metricreplicator
 
 import (
 	"github.com/pkg/errors"
@@ -12,10 +12,17 @@ type Replicator struct {
 	Address             string
 	TmpDir              string
 	APIClient           v1.API
-	ConsensusProperties []ConsensusProperty
+	ConsensusProperties []consensusProperty
 }
 
-func NewReplicator(address, tmpDir string) (replicator.Replicator, error) {
+func New(address, tmpDir string) (replicator.Replicator, error) {
+	properties := []consensusProperty{
+		sentTrafficPerNode, sentTrafficOverall,
+		recvTrafficPerNode, recvTrafficOverall,
+		sentConsensusPackets, recvConsensusPackets,
+		phase01Duration, phase2Duration, phase3Duration,
+	}
+
 	repl := Replicator{
 		Address:             address,
 		TmpDir:              tmpDir,

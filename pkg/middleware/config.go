@@ -1,4 +1,4 @@
-package prometheus
+package middleware
 
 import (
 	"io/ioutil"
@@ -77,13 +77,13 @@ func RangesToReplicatorPeriods(ranges []RangeConfig) []replicator.PeriodInfo {
 			Start:      time.Unix(r.StartTime, 0),
 			End:        time.Unix(r.StartTime, 0).Add(r.Interval),
 			Interval:   r.Interval,
-			Properties: NetworkPropertiesToPeriodProperties(r.NetworkProperties),
+			Properties: toPeriodProperties(r.NetworkProperties),
 		})
 	}
 	return props
 }
 
-func NetworkPropertiesToPeriodProperties(props []NetworkPropertyConfig) []replicator.PeriodProperty {
+func toPeriodProperties(props []NetworkPropertyConfig) []replicator.PeriodProperty {
 	replProps := make([]replicator.PeriodProperty, 0, len(props))
 	for _, p := range props {
 		replProps = append(replProps, replicator.PeriodProperty{
