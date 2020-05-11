@@ -40,6 +40,10 @@ type Inventory struct {
 	Count    uint
 }
 
+type ReportDataReader interface {
+	ReadReportData()
+}
+
 func MakeReport(cfg ReportConfig, wr io.Writer)  error {
 	f, err := pkger.Open("/pkg/report/template.html")
 	if err != nil {

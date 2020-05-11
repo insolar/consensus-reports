@@ -19,7 +19,7 @@
     const chartsContainer = document.getElementById('charts');
 
     const seriesName = (q) => {
-        return q + 'quantile';
+        return q + ' quantile';
     }
 
     const addChart = (name, quantiles, networkSizes) => {
@@ -41,7 +41,12 @@
             // },
             toolbox: {
                 feature: {
-                    saveAsImage: {title: 'Save as PNG'}
+                    saveAsImage: {title: 'Save as PNG'},
+                    magicType: {
+                        type: [ 'line', 'bar', 'stack'],
+                        title: {line: 'line', stack: 'stack', bar: 'bar' }
+                    },
+                    restore: {title: 'restore'}
                 }
             },
             legend: {
@@ -59,10 +64,11 @@
                     name: seriesName(q),
                     type: 'line',
                     data: [54, 204, 364, 140, 104, 204], // metric record value
-                    // markLine: { // red flag
-                    //     silent: true,
-                    //     data: [{yAxis: 100}, {yAxis: 300}]
-                    // }
+                    markLine: { // red flag
+                        silent: true,
+                        label: 'red flag',
+                        data: [{yAxis: 100}, {yAxis: 300}]
+                    }
                 }
             })
         };

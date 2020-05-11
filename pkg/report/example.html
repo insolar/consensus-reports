@@ -17,9 +17,10 @@
 
 <script>
     const chartsContainer = document.getElementById('charts');
+    const charts = [];
 
     const seriesName = (q) => {
-        return q + 'quantile';
+        return q + ' quantile';
     }
 
     const addChart = (name, quantiles, networkSizes) => {
@@ -41,7 +42,12 @@
             // },
             toolbox: {
                 feature: {
-                    saveAsImage: {title: 'Save as PNG'}
+                    saveAsImage: {title: 'Save as PNG'},
+                    magicType: {
+                        type: [ 'line', 'bar', 'stack'],
+                        title: {line: 'line', stack: 'stack', bar: 'bar' }
+                    },
+                    restore: {title: 'restore'}
                 }
             },
             legend: {
@@ -59,10 +65,12 @@
                     name: seriesName(q),
                     type: 'line',
                     data: [54, 204, 364, 140, 104, 204].map(v => Math.floor(Math.random() * Math.floor(100))) , // metric record value
-                    // markLine: { // red flag
-                    //     silent: true,
-                    //     data: [{yAxis: 100}, {yAxis: 300}]
-                    // }
+                    markLine: { // red flag
+                        silent: false,
+                        label: 'red flag',
+                        lineStyle: {color: 'red'},
+                        data: [{yAxis: 5}, {yAxis: 90}]
+                    }
                 }
             })
         };
@@ -74,15 +82,19 @@
 
         const chart = echarts.init(chartDiv);
         chart.setOption(option);
+        charts.push(chart);
     }
 
-    var jsonConfig = JSON.parse('{"charts": ["sent_traffic_per_node", "recv_traffic_per_node", "consensus_round_duration", "aa"],"quantiles": ["0.5", "0.8", "0.9"]}')
+    var jsonConfig = JSON.parse('{"charts": ["sent_traffic_per_node", "recv_traffic_per_node", "consensus_round_duration", "aa"],"quantiles": ["0.5", "0.8", "0.9", "0.95"]}')
     var jsonData = JSON.parse('[{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5}]');
 
     const networkSizes = [5, 7, 10, 15, 20, 50];
 
     jsonConfig.charts.forEach(chart => addChart(chart, jsonConfig.quantiles, networkSizes))
 
+    window.onresize = () => {
+        charts.forEach(c => c.resize())
+    }
 
 </script>
 

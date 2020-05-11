@@ -1,0 +1,1 @@
+{"charts":["sent_traffic_per_node","sent_traffic","recv_traffic_per_node","recv_traffic","sent_consensus_packets","recv_consensus_packets","phase01_duration","phase2_duration","phase3_duration"],"quantiles":["0.5","0.8","0.95","0.99"]}

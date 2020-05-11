@@ -1,5 +1,6 @@
-package main;
+package main
 
+<<<<<<< HEAD:cmd/report/main.go
 import (
 	"fmt"
 	"os"
@@ -14,23 +15,15 @@ type Config struct {
 	User string;
 	Password string;
 }
+=======
+>>>>>>> 8d557eb... tmp:report/cmd/main.go
 
 func main() {
-	err := report.MakeReport(report.ReportConfig{}, os.Stdout)
-	if err != nil {
-		panic(err)
-	}
+	// err := report.MakeReport(report.ReportConfig{}, os.Stdout)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	path := "/cef3ab1e"
-	cfg := Config{URL: "https://webdav.yandex.ru", User: "", Password: ""}
-	client := gowebdav.NewClient(cfg.URL, cfg.User, cfg.Password)
-
-	files, _ := client.ReadDir(path)
-	for _, file := range files {
-		// notice that [file] has os.FileInfo type
-		fmt.Println(file)
-		// sort by date
-	}
 
 
 }
