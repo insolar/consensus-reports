@@ -26,7 +26,7 @@ func TestReplicator_MakeConfigFile(t *testing.T) {
 		Charts:    []string{"sent_traffic_per_node", "phase2_duration", "sent_traffic"},
 		Quantiles: []string{"0.8", "0.9"},
 	}
-	filename := "config.json"
+	filename := replicator.DefaultConfigFilename
 	err = repl.MakeConfigFile(context.Background(), cfg, filename)
 	require.NoError(t, err)
 
@@ -57,7 +57,7 @@ func TestReplicator_UploadFiles(t *testing.T) {
 		Charts:    []string{"sent_traffic_per_node", "phase2_duration", "sent_traffic"},
 		Quantiles: []string{"0.8", "0.9"},
 	}
-	filename := "config.json"
+	filename := replicator.DefaultConfigFilename
 	err = repl.MakeConfigFile(context.Background(), cfg, filename)
 	require.NoError(t, err)
 

@@ -40,3 +40,5 @@ type LoaderConfig struct {
 	RemoteDirName string
 	Timeout       time.Duration
 }
+
+const DefaultConfigFilename = "config.json"

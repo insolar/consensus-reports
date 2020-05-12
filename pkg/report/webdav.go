@@ -7,27 +7,26 @@ import (
 	"github.com/studio-b12/gowebdav"
 
 	"github.com/insolar/consensus-reports/pkg/middleware"
+	"github.com/insolar/consensus-reports/pkg/replicator"
 )
 
-
 type WebdavClient struct {
-	cfg middleware.WebDavConfig
+	cfg       middleware.WebDavConfig
 	directory string
-	client *gowebdav.Client
+	client    *gowebdav.Client
 }
 
 func CreateWebdavClient(cfg middleware.WebDavConfig, directory string) *WebdavClient {
-	client := gowebdav.NewClient(cfg.URL, cfg.User, cfg.Password)
+	client := gowebdav.NewClient(cfg.Host, cfg.Username, cfg.Password)
 	client.SetTimeout(cfg.Timeout)
 
 	return &WebdavClient{cfg, directory, client}
 }
 
-func(w* WebdavClient) ReadReportData() (*ReportTemplateConfig, error) {
-
+func (w *WebdavClient) ReadReportData() (*ReportTemplateConfig, error) {
 
 	var reportCfg ConfigFileJson
-	buf, err := w.client.Read(path.Join(w.directory, "/config.json"))
+	buf, err := w.client.Read(path.Join(w.directory, "/", replicator.DefaultConfigFilename))
 	if err != nil {
 		return nil, err
 	}
@@ -42,9 +41,9 @@ func(w* WebdavClient) ReadReportData() (*ReportTemplateConfig, error) {
 		return nil, err
 	}
 
-	filesData := make(map[string]MetricFileJson, 0)
+	filesData := make(map[string]MetricFileJson)
 	for _, file := range files {
-		if file.Name() == "config.json" || file.IsDir() {
+		if file.Name() == replicator.DefaultConfigFilename || file.IsDir() {
 			continue
 		}
 
@@ -70,6 +69,6 @@ func(w* WebdavClient) ReadReportData() (*ReportTemplateConfig, error) {
 	return result, nil
 }
 
-func(w* WebdavClient) WriteReport(data []byte) error {
-	return w.client.Write(path.Join(w.directory, "index.html"), data, 644)
+func (w *WebdavClient) WriteReport(data []byte) error {
+	return w.client.Write(path.Join(w.directory, "index.html"), data, 0644)
 }

@@ -90,7 +90,7 @@ func Run(repl replicator.Replicator, cfg middleware.Config, removeAfter bool) er
 		return err
 	}
 
-	indexFilename := "config.json"
+	indexFilename := replicator.DefaultConfigFilename
 	outputCfg := replicator.OutputConfig{
 		Charts:    charts,
 		Quantiles: cfg.Quantiles,
