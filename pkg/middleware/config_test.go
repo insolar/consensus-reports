@@ -12,9 +12,9 @@ import (
 func TestConfig_Validate(t *testing.T) {
 	t.Run("all fields", func(t *testing.T) {
 		cfg := Config{
-			Quantiles:      []string{"0.5", "0.8"},
-			TmpDir:         "/tmp",
-			PrometheusHost: "localhost",
+			Quantiles:  []string{"0.5", "0.8"},
+			TmpDir:     "/tmp",
+			Prometheus: PrometheusConfig{Host: "localhost"},
 			Groups: []GroupConfig{
 				{
 					Description: "descr",
@@ -33,8 +33,8 @@ func TestConfig_Validate(t *testing.T) {
 				},
 			},
 			WebDav: WebDavConfig{
-				URL:      "test",
-				User:     "user",
+				Host:     "test",
+				Username: "user",
 				Password: "pwd",
 				Timeout:  time.Minute,
 			},
@@ -45,13 +45,13 @@ func TestConfig_Validate(t *testing.T) {
 	})
 	t.Run("without groups", func(t *testing.T) {
 		cfg := Config{
-			Quantiles:      []string{"0.5", "0.8"},
-			TmpDir:         "/tmp",
-			PrometheusHost: "localhost",
-			Groups:         []GroupConfig{},
+			Quantiles:  []string{"0.5", "0.8"},
+			TmpDir:     "/tmp",
+			Prometheus: PrometheusConfig{Host: "localhost"},
+			Groups:     []GroupConfig{},
 			WebDav: WebDavConfig{
-				URL:      "test",
-				User:     "user",
+				Host:     "test",
+				Username: "user",
 				Password: "pwd",
 			},
 			Commit: "hash",
@@ -62,9 +62,9 @@ func TestConfig_Validate(t *testing.T) {
 	})
 	t.Run("without some fields", func(t *testing.T) {
 		cfg := Config{
-			Quantiles:      []string{"0.5", "0.8"},
-			TmpDir:         "/tmp",
-			PrometheusHost: "",
+			Quantiles:  []string{"0.5", "0.8"},
+			TmpDir:     "/tmp",
+			Prometheus: PrometheusConfig{Host: ""},
 			Groups: []GroupConfig{
 				{
 					Description: "descr",
@@ -79,14 +79,14 @@ func TestConfig_Validate(t *testing.T) {
 				},
 			},
 			WebDav: WebDavConfig{
-				URL:  "test",
-				User: "user",
+				Host:     "test",
+				Username: "user",
 			},
 			Commit: "hash",
 		}
 		err := cfg.Validate()
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "validation for 'PrometheusHost' failed")
+		require.Contains(t, err.Error(), "validation for 'Host' failed")
 		require.Contains(t, err.Error(), "validation for 'StartTime' failed")
 		require.Contains(t, err.Error(), "validation for 'Value' failed")
 		require.Contains(t, err.Error(), "validation for 'Password' failed")

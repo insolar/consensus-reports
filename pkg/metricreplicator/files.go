@@ -17,6 +17,7 @@ const (
 	fileMode = 0644
 )
 
+// UploadFiles creates webdav client, makes remote directory and upload all files from tmp directory.
 func (repl Replicator) UploadFiles(ctx context.Context, cfg replicator.LoaderConfig, files []string) error {
 	client := gowebdav.NewClient(cfg.URL, cfg.User, cfg.Password)
 	client.SetTimeout(cfg.Timeout)

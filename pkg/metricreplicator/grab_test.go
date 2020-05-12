@@ -18,18 +18,23 @@ func TestReplicator_GrabRecords(t *testing.T) {
 		ConsensusProperties: []consensusProperty{sentTrafficPerNode, phase2Duration, sentTrafficOverall},
 		TmpDir:              testTmpDir,
 	}
-	repl.APIClient = APIMock{QueryMock: func(ctx context.Context, query string, ts time.Time) (value model.Value, warnings v1.Warnings, err error) {
-		if time.Until(ts) > time.Minute*30 {
+	repl.APIClient = APIMock{QueryRangeMock: func(ctx context.Context, query string, r v1.Range) (value model.Value, warnings v1.Warnings, err error) {
+		if time.Until(r.End) > time.Minute*30 {
 			return nil, nil, errors.New("fake query error")
 		}
 
-		result := []*model.Sample{
+		result := []*model.SampleStream{
 			{
 				Metric: map[model.LabelName]model.LabelValue{"Name": "metric1"},
-				Value:  model.SampleValue(10),
+				Values: []model.SamplePair{
+					{Timestamp: 1, Value: 2},
+					{Timestamp: 2, Value: 10},
+					{Timestamp: 3, Value: 1},
+					{Timestamp: 4, Value: 5},
+				},
 			},
 		}
-		return model.Vector(result), nil, nil
+		return model.Matrix(result), nil, nil
 	}}
 
 	ctx := context.Background()
@@ -57,7 +62,7 @@ func TestReplicator_GrabRecords(t *testing.T) {
 	t.Run("positive", func(t *testing.T) {
 		files, charts, err := repl.GrabRecords(ctx, []string{"0.8", "0.9"}, ranges)
 		require.NoError(t, err)
-		require.Equal(t, []string{"network_size_5.json", "network_size_10.json"}, files)
+		require.Equal(t, []string{"latency_50ms_network_size_5.json", "network_size_10.json"}, files)
 		require.Equal(t, []string{"sent_traffic_per_node", "phase2_duration", "sent_traffic"}, charts)
 	})
 	t.Run("query error", func(t *testing.T) {

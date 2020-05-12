@@ -12,36 +12,40 @@ import (
 )
 
 type PropertyConfig struct {
-	Name  string `yaml:"name" validate:"required"`
-	Value string `yaml:"value" validate:"required"`
+	Name  string `mapstructure:"name" validate:"required"`
+	Value string `mapstructure:"value" validate:"required"`
 }
 
 type RangeConfig struct {
-	StartTime  int64            `yaml:"start_time" validate:"required"`
-	Interval   time.Duration    `yaml:"interval" validate:"required"`
-	Properties []PropertyConfig `yaml:"props" validate:"min=1,dive,required"`
+	StartTime  int64            `mapstructure:"start_time" validate:"required"`
+	Interval   time.Duration    `mapstructure:"interval" validate:"required"`
+	Properties []PropertyConfig `mapstructure:"props" validate:"min=1,dive,required"`
 }
 
 type WebDavConfig struct {
-	URL      string        `yaml:"url" validate:"required"`
-	User     string        `yaml:"user" validate:"required"`
-	Password string        `yaml:"password" validate:"required"`
-	Timeout  time.Duration `yaml:"timeout" validate:"required"`
+	Host     string        `mapstructure:"host" validate:"required"`
+	Username string        `mapstructure:"username" validate:"required"`
+	Password string        `mapstructure:"password" validate:"required"`
+	Timeout  time.Duration `mapstructure:"timeout" validate:"required"`
 }
 
 type GroupConfig struct {
-	Description string           `yaml:"description" validate:"required"`
-	Network     []PropertyConfig `yaml:"network" validate:"omitempty"`
-	Ranges      []RangeConfig    `yaml:"ranges" validate:"min=1,dive,required"`
+	Description string           `mapstructure:"description" validate:"required"`
+	Network     []PropertyConfig `mapstructure:"network" validate:"omitempty"`
+	Ranges      []RangeConfig    `mapstructure:"ranges" validate:"min=1,dive,required"`
+}
+
+type PrometheusConfig struct {
+	Host string `mapstructure:"host" validate:"required"`
 }
 
 type Config struct {
-	Quantiles      []string      `yaml:"quantiles" validate:"min=1,dive,required"`
-	TmpDir         string        `yaml:"tmp_directory" validate:"required"`
-	PrometheusHost string        `yaml:"prometheus_host" validate:"required"`
-	Groups         []GroupConfig `yaml:"groups" validate:"min=1,dive,required"`
-	WebDav         WebDavConfig  `yaml:"webdav" validate:"required"`
-	Commit         string        `yaml:"commit_hash" validate:"required"`
+	Quantiles  []string         `mapstructure:"quantiles" validate:"min=1,dive,required"`
+	TmpDir     string           `mapstructure:"tmp_directory" validate:"required"`
+	Prometheus PrometheusConfig `mapstructure:"prometheus" validate:"required"`
+	Groups     []GroupConfig    `mapstructure:"groups" validate:"min=1,dive,required"`
+	WebDav     WebDavConfig     `mapstructure:"webdav" validate:"required"`
+	Commit     string           `mapstructure:"commit_hash" validate:"required"`
 }
 
 func NewConfig(cfgPath string) (Config, error) {
@@ -68,8 +72,8 @@ func (cfg *Config) Validate() error {
 
 func (cfg Config) LoaderConfig() replicator.LoaderConfig {
 	return replicator.LoaderConfig{
-		URL:           cfg.WebDav.URL,
-		User:          cfg.WebDav.User,
+		URL:           cfg.WebDav.Host,
+		User:          cfg.WebDav.Username,
 		Password:      cfg.WebDav.Password,
 		RemoteDirName: cfg.Commit,
 		Timeout:       cfg.WebDav.Timeout,

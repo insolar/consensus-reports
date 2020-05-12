@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 
 	"github.com/insolar/consensus-reports/pkg/replicator"
@@ -33,6 +34,8 @@ type ResultData struct {
 	Network     []NetworkProperty `json:"network"`
 	Properties  []NetworkProperty `json:"properties"`
 	Description string            `json:"description"`
+	StartTime   time.Time         `json:"start_time"`
+	EndTime     time.Time         `json:"end_time"`
 }
 
 func toNetworkProperties(props []replicator.PeriodProperty) []NetworkProperty {
@@ -46,25 +49,41 @@ func toNetworkProperties(props []replicator.PeriodProperty) []NetworkProperty {
 	return networkProps
 }
 
-func (repl Replicator) queryVector(ctx context.Context, query string, ts time.Time) (float64, []string, error) {
+func (repl Replicator) queryRangeMatrix(ctx context.Context, query string, startTime, endTime time.Time) (float64, []string, error) {
 	queryCtx, cancel := context.WithTimeout(ctx, time.Second*30)
 	defer cancel()
 
-	result, warnings, queryErr := repl.APIClient.Query(queryCtx, query, ts)
+	queryRange := v1.Range{
+		Start: startTime,
+		End:   endTime,
+		Step:  time.Second * 10, // pulse
+	}
+
+	result, warnings, queryErr := repl.APIClient.QueryRange(queryCtx, query, queryRange)
 	if queryErr != nil {
 		return 0, []string{}, errors.Wrap(queryErr, "failed to query prometheus")
 	}
 
-	records, ok := result.(model.Vector)
+	records, ok := result.(model.Matrix)
 	if !ok {
-		return 0, []string{}, errors.Errorf("failed to cast result type %T to %T", result, model.Vector{})
+		return 0, []string{}, errors.Errorf("failed to cast result type %T to %T", result, model.Matrix{})
 	}
 
-	return float64(records[0].Value), warnings, nil
+	// Get maximum from all values in time period, because there are outbursts on prometheus graph
+	var maxValue float64
+	for _, r := range records {
+		for _, v := range r.Values {
+			if float64(v.Value) > maxValue {
+				maxValue = float64(v.Value)
+			}
+		}
+	}
+
+	return maxValue, warnings, nil
 }
 
-func (repl Replicator) grabRecord(ctx context.Context, query string, ts time.Time, property consensusProperty, quantile string) (RecordInfo, []string, error) {
-	value, warnings, grabErr := repl.queryVector(ctx, query, ts)
+func (repl Replicator) grabRecord(ctx context.Context, query string, startTime, endTime time.Time, property consensusProperty, quantile string) (RecordInfo, []string, error) {
+	value, warnings, grabErr := repl.queryRangeMatrix(ctx, query, startTime, endTime)
 	if grabErr != nil {
 		return RecordInfo{}, []string{}, errors.Wrap(grabErr, fmt.Sprintf("failed to get result for query: `%s`", query))
 	}
@@ -80,8 +99,13 @@ func (repl Replicator) grabRecord(ctx context.Context, query string, ts time.Tim
 	return record, warnings, nil
 }
 
+// getFilename generates name from Period immutable and mutable properties.
 func getFilename(period replicator.PeriodInfo) string {
 	filename := ""
+
+	for _, p := range period.Network {
+		filename = strings.Join([]string{filename, p.Name, p.Value}, "_")
+	}
 
 	for _, p := range period.Properties {
 		filename = strings.Join([]string{filename, p.Name, p.Value}, "_")
@@ -102,17 +126,12 @@ func (repl Replicator) GrabRecordsByPeriod(ctx context.Context, quantiles []stri
 		records  []RecordInfo
 	)
 
-	interval := period.Interval.String()
-	if strings.Contains(interval, "0s") {
-		interval = strings.Replace(interval, "0s", "", 1)
-	}
-
 	for _, p := range repl.ConsensusProperties {
 		if p.Quantile {
 			for _, q := range quantiles {
-				query := fmt.Sprintf(p.Formula, q, interval)
+				query := fmt.Sprintf(p.Formula, q)
 
-				record, warnings, err := repl.grabRecord(ctx, query, period.End, p, q)
+				record, warnings, err := repl.grabRecord(ctx, query, period.Start, period.End, p, q)
 				if err != nil {
 					return "", errors.Wrap(err, "failed to grab record")
 				}
@@ -122,9 +141,7 @@ func (repl Replicator) GrabRecordsByPeriod(ctx context.Context, quantiles []stri
 			}
 			continue
 		}
-		query := fmt.Sprintf(p.Formula, interval)
-
-		record, warnings, err := repl.grabRecord(ctx, query, period.End, p, "")
+		record, warnings, err := repl.grabRecord(ctx, p.Formula, period.Start, period.End, p, "")
 		if err != nil {
 			return "", errors.Wrap(err, "failed to grab record")
 		}
@@ -141,6 +158,8 @@ func (repl Replicator) GrabRecordsByPeriod(ctx context.Context, quantiles []stri
 		Properties:  toNetworkProperties(period.Properties),
 		Network:     toNetworkProperties(period.Network),
 		Description: period.Description,
+		StartTime:   period.Start.UTC(),
+		EndTime:     period.End.UTC(),
 	}
 
 	rawMsg, marshalErr := json.Marshal(result)
