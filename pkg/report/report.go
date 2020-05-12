@@ -1,50 +1,52 @@
 package report
 
 import (
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"text/template"
 
 	"github.com/markbates/pkger"
+
+	"github.com/insolar/consensus-reports/pkg/metricreplicator"
 )
 
-type ChartConfig struct {
-	Charts []string `json:"charts"`
+type ConfigFileJson struct {
+	ChartNames []string `json:"charts"`
 	Quantiles []string `json:"quantiles"` // series
 }
 
-type RecordInfo struct {
-	Chart string `json:"chart"`
-	Unit string  `json:"unit"`
-	Quantile string  `json:"quantile"`
-	Description string `json:"description"`
-	OriginalFormula string  `json:"original_formula"`
-	Value  float64 `json:"value"`
-}
+type MetricFileJson metricreplicator.ResultData
 
-type ResultData struct {
-	Warnings    []string     `json:"warnings"`
-	Records     []RecordInfo `json:"records"`
-	NetworkSize uint         `json:"network_size"`
-}
-
-
-type ReportConfig struct {
+// reportTemplateConfig passes to template
+type ReportTemplateConfig struct {
 	HtmlTitle string
-	ChartConfig string
-	// data
-}
-
-type Inventory struct {
-	Material string
-	Count    uint
+	ChartConfig ConfigFileJson
 }
 
 type ReportDataReader interface {
-	ReadReportData()
+	ReadReportData() (*ReportTemplateConfig, error)
 }
 
-func MakeReport(cfg ReportConfig, wr io.Writer)  error {
+func MakeReport(reader ReportDataReader, wr io.Writer)  error {
+	c, err := reader.ReadReportData()
+	if err != nil {
+		return err
+	}
+
+	chartConfigBuf, err := json.Marshal(c.ChartConfig)
+	if err != nil {
+		return err
+	}
+
+	templateData := struct {
+		HtmlTitle string
+		ChartConfig string
+	} {
+		HtmlTitle: c.HtmlTitle,
+		ChartConfig: string(chartConfigBuf),
+	}
+
 	f, err := pkger.Open("/pkg/report/template.html")
 	if err != nil {
 		return err
@@ -61,7 +63,7 @@ func MakeReport(cfg ReportConfig, wr io.Writer)  error {
 	if err != nil {
 		return err
 	}
-	err = tmpl.Execute(wr, cfg)
+	err = tmpl.Execute(wr, templateData)
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@
 </head>
 <body>
 <div class="container">
+    <h3>{{.HtmlTitle}}</h3>
     <div id="charts"></div>
 </div>
 
@@ -83,9 +84,9 @@
     }
 
     var jsonConfig = JSON.parse('{{.ChartConfig}}');
-    var jsonData = JSON.parse('[{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5}]');
+    // var jsonData = JSON.parse('[{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5}]');
 
-    const networkSizes = [5, 7, 10, 15, 20, 50];
+    const networkSizes = JSON.parse('[5, 7, 10, 15, 20, 50]');
 
     jsonConfig.charts.forEach(chart => addChart(chart, jsonConfig.quantiles, networkSizes))
 
