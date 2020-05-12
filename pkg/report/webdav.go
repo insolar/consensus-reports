@@ -2,7 +2,6 @@ package report
 
 import (
 	"encoding/json"
-	"fmt"
 	"path"
 
 	"github.com/studio-b12/gowebdav"
@@ -14,18 +13,21 @@ import (
 type WebdavClient struct {
 	cfg middleware.WebDavConfig
 	directory string
+	client *gowebdav.Client
 }
 
 func CreateWebdavClient(cfg middleware.WebDavConfig, directory string) *WebdavClient {
-	return &WebdavClient{cfg, directory}
+	client := gowebdav.NewClient(cfg.URL, cfg.User, cfg.Password)
+	client.SetTimeout(cfg.Timeout)
+
+	return &WebdavClient{cfg, directory, client}
 }
 
 func(w* WebdavClient) ReadReportData() (*ReportTemplateConfig, error) {
-	client := gowebdav.NewClient(w.cfg.URL, w.cfg.User, w.cfg.Password)
-	client.SetTimeout(w.cfg.Timeout)
+
 
 	var reportCfg ConfigFileJson
-	buf, err := client.Read(path.Join(w.directory, "/config.json"))
+	buf, err := w.client.Read(path.Join(w.directory, "/config.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +37,7 @@ func(w* WebdavClient) ReadReportData() (*ReportTemplateConfig, error) {
 		return nil, err
 	}
 
-	files, err := client.ReadDir(w.directory)
+	files, err := w.client.ReadDir(w.directory)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +48,7 @@ func(w* WebdavClient) ReadReportData() (*ReportTemplateConfig, error) {
 			continue
 		}
 
-		buf, err = client.Read(path.Join(w.directory, file.Name()))
+		buf, err = w.client.Read(path.Join(w.directory, file.Name()))
 		if err != nil {
 			return nil, err
 		}
@@ -57,10 +59,17 @@ func(w* WebdavClient) ReadReportData() (*ReportTemplateConfig, error) {
 			return nil, err
 		}
 		filesData[file.Name()] = f
-		fmt.Println(file.Name()) // network_size_10.json
+		// fmt.Println(file.Name()) // network_size_10.json
 	}
 
 	// transform data to
+	result := &ReportTemplateConfig{}
+	result.HtmlTitle = "title doc"
+	result.ChartConfig = reportCfg
 
-	return nil, nil
+	return result, nil
+}
+
+func(w* WebdavClient) WriteReport(data []byte) error {
+	return w.client.Write(path.Join(w.directory, "index.html"), data, 644)
 }

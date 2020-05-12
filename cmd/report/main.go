@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/spf13/pflag"
+	"go.uber.org/zap/buffer"
 
 	"github.com/insolar/consensus-reports/pkg/middleware"
 	"github.com/insolar/consensus-reports/pkg/report"
@@ -49,6 +50,15 @@ func main() {
 			panic(err)
 		}
 	} else {
-		// write to file
+		buff := &buffer.Buffer{}
+		err = report.MakeReport(client, buff)
+		if err != nil {
+			panic(err)
+		}
+
+		err = client.WriteReport(buff.Bytes()) // write to file
+		if err != nil {
+			panic(err)
+		}
 	}
 }
