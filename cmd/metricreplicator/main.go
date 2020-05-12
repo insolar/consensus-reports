@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 
 	"github.com/insolar/consensus-reports/pkg/metricreplicator"
 	"github.com/insolar/consensus-reports/pkg/middleware"
@@ -21,16 +22,47 @@ func main() {
 		log.Fatalln("empty path to cfg file")
 	}
 
-	cfg, err := middleware.NewConfig(*cfgPath)
-	if err != nil {
-		log.Fatalf("failed to init config: %v", err)
+	// insConfig := insconfig.New(insconfig.Params{
+	// 	EnvPrefix:        "reports_webdav",
+	// 	ConfigPathGetter: &insconfig.PFlagPathGetter{PFlags: pflag.CommandLine},
+	// })
+	// var cfg middleware.Config
+	// if err := insConfig.Load(&cfg); err != nil {
+	// 	log.Fatalf("failed to load config: %v", err)
+	// }
+
+	vp := viper.New()
+	vp.SetConfigFile(*cfgPath)
+
+	vp.SetEnvPrefix("reports_webdav") // will be uppercased automatically
+	if err := vp.BindEnv("host"); err != nil {
+		log.Fatalf("failed to get webdav host: %v", err)
 	}
+	if err := vp.BindEnv("password"); err != nil {
+		log.Fatalf("failed to get webdav password: %v", err)
+	}
+	if err := vp.BindEnv("username"); err != nil {
+		log.Fatalf("failed to get webdav username: %v", err)
+	}
+
+	if err := vp.ReadInConfig(); err != nil {
+		log.Fatalf("failed to read config: %v", err)
+	}
+
+	var cfg middleware.Config
+	if err := vp.Unmarshal(&cfg); err != nil {
+		log.Fatalf("failed to unmarshal config: %v", err)
+	}
+
+	cfg.WebDav.Host = vp.GetString("host")
+	cfg.WebDav.Username = vp.GetString("username")
+	cfg.WebDav.Password = vp.GetString("password")
 
 	if err := cfg.Validate(); err != nil {
-		log.Fatalf("failed to validate config: %v", err)
+		log.Fatalf("failed to validate config: %v\ncfg: %+v", err, cfg)
 	}
 
-	repl, err := metricreplicator.New(cfg.PrometheusHost, cfg.TmpDir)
+	repl, err := metricreplicator.New(cfg.Prometheus.Host, cfg.TmpDir)
 	if err != nil {
 		log.Fatalf("failed to init replicator: %v", err)
 	}
