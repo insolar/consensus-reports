@@ -4,54 +4,88 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 
-	"github.com/insolar/consensus-reports/pkg/prometheus"
+	"github.com/insolar/consensus-reports/pkg/metricreplicator"
+	"github.com/insolar/consensus-reports/pkg/middleware"
 	"github.com/insolar/consensus-reports/pkg/replicator"
 )
 
 func main() {
-	cfgPath := pflag.String("cfg", "", "config for replicator")
+	cfgPath := pflag.String("cfg", "", "Path to cfg file")
+	removeAfter := pflag.Bool("rm", true, "Option to remove tmp dir after work")
 	pflag.Parse()
 
 	if *cfgPath == "" {
 		log.Fatalln("empty path to cfg file")
 	}
 
-	cfg, err := prometheus.NewConfig(*cfgPath)
-	if err != nil {
-		log.Fatalf("failed to parse config: %v", err)
+	// insConfig := insconfig.New(insconfig.Params{
+	// 	EnvPrefix:        "reports_webdav",
+	// 	ConfigPathGetter: &insconfig.PFlagPathGetter{PFlags: pflag.CommandLine},
+	// })
+	// var cfg middleware.Config
+	// if err := insConfig.Load(&cfg); err != nil {
+	// 	log.Fatalf("failed to load config: %v", err)
+	// }
+
+	vp := viper.New()
+	vp.SetConfigFile(*cfgPath)
+
+	vp.SetEnvPrefix("reports_webdav") // will be uppercased automatically
+	if err := vp.BindEnv("host"); err != nil {
+		log.Fatalf("failed to get webdav host: %v", err)
 	}
+	if err := vp.BindEnv("password"); err != nil {
+		log.Fatalf("failed to get webdav password: %v", err)
+	}
+	if err := vp.BindEnv("username"); err != nil {
+		log.Fatalf("failed to get webdav username: %v", err)
+	}
+
+	if err := vp.ReadInConfig(); err != nil {
+		log.Fatalf("failed to read config: %v", err)
+	}
+
+	var cfg middleware.Config
+	if err := vp.Unmarshal(&cfg); err != nil {
+		log.Fatalf("failed to unmarshal config: %v", err)
+	}
+
+	cfg.WebDav.Host = vp.GetString("host")
+	cfg.WebDav.Username = vp.GetString("username")
+	cfg.WebDav.Password = vp.GetString("password")
 
 	if err := cfg.Validate(); err != nil {
-		log.Fatalf("failed to validate config: %v", err)
+		log.Fatalf("failed to validate config: %v\ncfg: %+v", err, cfg)
 	}
 
-	repl, err := prometheus.NewReplicator(cfg.PrometheusHost, cfg.TmpDir)
+	repl, err := metricreplicator.New(cfg.Prometheus.Host, cfg.TmpDir)
 	if err != nil {
 		log.Fatalf("failed to init replicator: %v", err)
 	}
 
-	if err := Run(repl, cfg); err != nil {
+	if err := Run(repl, cfg, *removeAfter); err != nil {
 		log.Fatalf("failed to replicate metrics: %v", err)
 	}
 
 	fmt.Println("Done!")
 }
 
-func Run(repl replicator.Replicator, cfg prometheus.Config) error {
-	cleanDir, err := ToTmpDir(cfg.TmpDir)
-	defer cleanDir()
+func Run(repl replicator.Replicator, cfg middleware.Config, removeAfter bool) error {
+	cleanDir, err := metricreplicator.MakeTmpDir(cfg.TmpDir)
+	if removeAfter {
+		defer cleanDir()
+	}
 	if err != nil {
 		return err
 	}
 
 	ctx := context.Background()
 
-	files, charts, err := repl.GrabRecords(ctx, cfg.Quantiles, prometheus.RangesToReplicatorPeriods(cfg.Ranges))
+	files, charts, err := repl.GrabRecords(ctx, cfg.Quantiles, middleware.GroupsToReplicatorPeriods(cfg.Groups))
 	if err != nil {
 		return err
 	}
@@ -72,21 +106,4 @@ func Run(repl replicator.Replicator, cfg prometheus.Config) error {
 		return err
 	}
 	return nil
-}
-
-func ToTmpDir(dirname string) (func(), error) {
-	if err := os.Mkdir(dirname, 0777); err != nil {
-		return func() {}, errors.Wrap(err, "failed to create tmp dir")
-	}
-
-	removeFunc := func() {
-		if err := os.RemoveAll(dirname); err != nil {
-			log.Printf("failed to remove tmp dir: %v", err)
-		}
-	}
-
-	if err := os.Chdir(dirname); err != nil {
-		return removeFunc, errors.Wrap(err, "cant change dir to tmp directory")
-	}
-	return removeFunc, nil
 }
