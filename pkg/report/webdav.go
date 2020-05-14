@@ -58,6 +58,12 @@ func CreateWebdavClient(cfg Config) *WebdavClient {
 	return &WebdavClient{cfg, client}
 }
 
+type fileInfo struct {
+	filename             string
+	networkPropertyValue int
+	networkPropertyUnit  string // just a thought for future properties like latency_50ms
+}
+
 func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 	var reportCfg ConfigFileJson
 	buf, err := w.fs.Read(path.Join(w.cfg.Webdav.Directory, "/", replicator.DefaultConfigFilename))
@@ -75,13 +81,6 @@ func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 		return nil, err
 	}
 
-	filenames := make([]string, 0)
-	for _, file := range files {
-		if strings.HasPrefix(file.Name(), NetworkSizePrefix) && strings.HasSuffix(file.Name(), JsonFileExtension) {
-			filenames = append(filenames, file.Name())
-		}
-	}
-
 	parseNumber := func(filename string) int {
 		trimmed := strings.TrimPrefix(filename, NetworkSizePrefix)
 		numStr := strings.TrimSuffix(trimmed, JsonFileExtension)
@@ -93,20 +92,25 @@ func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 		return res
 	}
 
+	filenames := make([]fileInfo, 0)
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), NetworkSizePrefix) && strings.HasSuffix(file.Name(), JsonFileExtension) {
+			filenames = append(filenames, fileInfo{file.Name(), parseNumber(file.Name()), "network_size"})
+		}
+	}
+
 	sort.Slice(filenames, func(i, j int) bool {
-		numA := parseNumber(filenames[i])
-		numB := parseNumber(filenames[j])
-		return numA < numB
+		return filenames[i].networkPropertyValue < filenames[j].networkPropertyValue
 	})
 
 	xValues := make([]int, 0)
 	for _, n := range filenames {
-		xValues = append(xValues, parseNumber(n))
+		xValues = append(xValues, n.networkPropertyValue)
 	}
 
 	filesData := make([]MetricFileJson, 0, len(filenames))
 	for _, file := range filenames {
-		buf, err = w.fs.Read(path.Join(w.cfg.Webdav.Directory, file))
+		buf, err = w.fs.Read(path.Join(w.cfg.Webdav.Directory, file.filename))
 		if err != nil {
 			return nil, err
 		}
