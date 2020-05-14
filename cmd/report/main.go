@@ -7,7 +7,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -30,35 +29,39 @@ func main() {
 	}
 	insConfigurator := insconfig.New(params)
 	err := insConfigurator.Load(&cfg)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	checkError(err)
 
 	client := report.CreateWebdavClient(cfg)
 
 	if serveAddress != nil && *serveAddress != "" {
-		fmt.Println("listen at http://" + *serveAddress)
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			err := report.MakeReport(client, w)
-			if err != nil {
-				log.Fatalln(err)
-			}
-		})
-
-		err := http.ListenAndServe(*serveAddress, nil)
-		if err != nil {
-			log.Fatalln(err)
-		}
+		serveReport(*serveAddress, client)
 	} else {
-		buff := &buffer.Buffer{}
-		err := report.MakeReport(client, buff)
-		if err != nil {
-			log.Fatalln(err)
-		}
+		saveReport(client)
+	}
+}
 
-		err = client.WriteReport(buff.Bytes())
-		if err != nil {
-			log.Fatalln(err)
-		}
+func saveReport(client *report.WebdavClient) {
+	buff := &buffer.Buffer{}
+	err := report.MakeReport(client, buff)
+	checkError(err)
+
+	err = client.WriteReport(buff.Bytes())
+	checkError(err)
+}
+
+func serveReport(serveAddress string, dataReader report.TemplateDataReader) {
+	log.Println("listen at http://" + serveAddress)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		err := report.MakeReport(dataReader, w)
+		checkError(err)
+	})
+
+	err := http.ListenAndServe(serveAddress, nil)
+	checkError(err)
+}
+
+func checkError(err error) {
+	if err != nil {
+		log.Fatalln(err)
 	}
 }
