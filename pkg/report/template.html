@@ -2,17 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{.HtmlTitle}}</title>
+    <title>Consensus performance report</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.7.0/echarts.js"></script>
 
     <style>
+        h1, h2, h3{text-align: center;}
         #charts{display: flex; flex-direction: row; flex-wrap: wrap;}
         .item{height: 40vh; width: 50%; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h3>{{.HtmlTitle}}</h3>
+    <h3>
+        Consensus performance report for branch
+        &nbsp;<a target="_blank" href="https://github.com/insolar/assured-ledger/tree/{{.GitBranch}}">{{.GitBranch}}</a>
+        &nbsp;commit hash <a target="_blank" href="https://github.com/insolar/assured-ledger/commit/{{.GitCommitHash}}">{{.GitCommitHash}}</a>
+    </h3>
     <div id="charts"></div>
 </div>
 
@@ -20,20 +25,24 @@
     const chartsContainer = document.getElementById('charts');
 
     const seriesName = (q) => {
+        if (q === "") {
+            return q;
+        }
         return q + ' quantile';
     }
 
-    const addChart = (name, quantiles, networkSizes) => {
+    const addChart = (chartData, xAxis) => {
         const option = {
             title: {
-                id: name,
-                text: name + " description",
+                id: chartData.name,
+                text: chartData.description,
                 // subtext: 'description',
                 left: 'center'
             },
             tooltip: {
                 trigger: 'axis',
             },
+
             // grid: {
             //     left: '3%',
             //     right: '4%',
@@ -52,24 +61,24 @@
             },
             legend: {
                 top: '25',
-                data: quantiles.map(q => seriesName(q))
+                data: chartData.series.map(q => seriesName(q.name))
             },
             xAxis: {
-                name: 'Network size',
+                name: xAxis.name,
                 nameLocation: 'center',
-                data: networkSizes // network sizes
+                data: xAxis.data // network sizes
             },
-            yAxis: {type: 'value', name: 'Unit name'},
-            series: quantiles.map(q => {
+            yAxis: {type: 'value', name: chartData.yAxisName},
+            series: chartData.series.map(q => {
                 return {
-                    name: seriesName(q),
+                    name: seriesName(q.name),
                     type: 'line',
-                    data: [54, 204, 364, 140, 104, 204], // metric record value
-                    markLine: { // red flag
-                        silent: true,
-                        label: 'red flag',
-                        data: [{yAxis: 100}, {yAxis: 300}]
-                    }
+                    data: q.data, // metric record value // todo:
+                    // markLine: { // todo: red flag
+                    //     silent: true,
+                    //     label: 'red flag',
+                    //     data: [{yAxis: 100}, {yAxis: 300}]
+                    // }
                 }
             })
         };
@@ -83,12 +92,10 @@
         chart.setOption(option);
     }
 
-    var jsonConfig = JSON.parse('{{.ChartConfig}}');
-    // var jsonData = JSON.parse('[{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":36.00000000000091}],"network_size":10},{"warnings":[],"records":[{"metric":"quantile(0.5, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.8, sum by (instance) (insolar_consensus_packets_sent))","value":36}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.95, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5},{"warnings":[],"records":[{"metric":"quantile(0.99, sum by (instance) (insolar_consensus_packets_sent))","value":35.99999999999909}],"network_size":5}]');
+    const jsonConfig = JSON.parse('{{.ChartConfig}}');
+    const xAxis = JSON.parse('{{.XAxis}}')
 
-    const networkSizes = JSON.parse('[5, 7, 10, 15, 20, 50]');
-
-    jsonConfig.charts.forEach(chart => addChart(chart, jsonConfig.quantiles, networkSizes))
+    jsonConfig.forEach(chart => addChart(chart, xAxis))
 
 
 </script>
