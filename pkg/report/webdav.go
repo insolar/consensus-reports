@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/studio-b12/gowebdav"
 
 	"github.com/insolar/consensus-reports/pkg/metricreplicator"
@@ -23,6 +24,7 @@ import (
 const DefaultReportFileName = "index.html"
 const NetworkSizePrefix = "network_size_"
 const JsonFileExtension = ".json"
+const ReadTemplateDataErrorMessage = "Failed to read template data"
 
 type MetricFileJson metricreplicator.ResultData
 
@@ -65,20 +67,38 @@ type fileInfo struct {
 }
 
 func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
+	reportCfg, err := w.readConfigJson()
+	if err != nil {
+		return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
+	}
+
+	filenames, err := w.scanWebdavFiles()
+	if err != nil {
+		return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
+	}
+
+	return w.collectTemplateData(filenames, reportCfg)
+}
+
+func (w *WebdavClient) readConfigJson() (*ConfigFileJson, error) {
 	var reportCfg ConfigFileJson
 	buf, err := w.fs.Read(path.Join(w.cfg.Webdav.Directory, "/", replicator.DefaultConfigFilename))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
 	}
 
 	err = json.Unmarshal(buf, &reportCfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
 	}
 
+	return &reportCfg, nil
+}
+
+func (w *WebdavClient) scanWebdavFiles() ([]fileInfo, error) {
 	files, err := w.fs.ReadDir(w.cfg.Webdav.Directory)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
 	}
 
 	parseNumber := func(filename string) int {
@@ -99,6 +119,10 @@ func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 		}
 	}
 
+	return filenames, nil
+}
+
+func (w *WebdavClient) collectTemplateData(filenames []fileInfo, reportCfg *ConfigFileJson) (*TemplateData, error) {
 	sort.Slice(filenames, func(i, j int) bool {
 		return filenames[i].networkPropertyValue < filenames[j].networkPropertyValue
 	})
@@ -110,15 +134,15 @@ func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 
 	filesData := make([]MetricFileJson, 0, len(filenames))
 	for _, file := range filenames {
-		buf, err = w.fs.Read(path.Join(w.cfg.Webdav.Directory, file.filename))
+		buf, err := w.fs.Read(path.Join(w.cfg.Webdav.Directory, file.filename))
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
 		}
 
 		var f MetricFileJson
 		err = json.Unmarshal(buf, &f)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
 		}
 		filesData = append(filesData, f)
 	}

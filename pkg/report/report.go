@@ -12,7 +12,10 @@ import (
 	"text/template"
 
 	"github.com/markbates/pkger"
+	"github.com/pkg/errors"
 )
+
+const MakeReportErrorMessage = "Failed to make report"
 
 type XAxis struct {
 	Name string `json:"name"`
@@ -54,7 +57,7 @@ func mustMarshall(v interface{}) string {
 func MakeReport(reader TemplateDataReader, wr io.Writer) error {
 	c, err := reader.ReadTemplateData()
 	if err != nil {
-		return err
+		return errors.Wrap(err, MakeReportErrorMessage)
 	}
 
 	templateData := struct {
@@ -71,22 +74,22 @@ func MakeReport(reader TemplateDataReader, wr io.Writer) error {
 
 	f, err := pkger.Open("/pkg/report/template.html")
 	if err != nil {
-		return err
+		return errors.Wrap(err, MakeReportErrorMessage)
 	}
 	defer f.Close()
 
 	buf, err := ioutil.ReadAll(f)
 	if err != nil {
-		return err
+		return errors.Wrap(err, MakeReportErrorMessage)
 	}
 
 	tmpl, err := template.New("report").Parse(string(buf))
 	if err != nil {
-		return err
+		return errors.Wrap(err, MakeReportErrorMessage)
 	}
 	err = tmpl.Execute(wr, templateData)
 	if err != nil {
-		return err
+		return errors.Wrap(err, MakeReportErrorMessage)
 	}
 
 	return nil
