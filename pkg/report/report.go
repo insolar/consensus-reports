@@ -1,3 +1,8 @@
+// Copyright 2020 Insolar Network Ltd.
+// All rights reserved.
+// This material is licensed under the Insolar License version 1.0,
+// available at https://github.com/insolar/assured-ledger/blob/master/LICENSE.md.
+
 package report
 
 import (
@@ -7,44 +12,61 @@ import (
 	"text/template"
 
 	"github.com/markbates/pkger"
-
-	"github.com/insolar/consensus-reports/pkg/metricreplicator"
 )
 
-type ConfigFileJson struct {
-	ChartNames []string `json:"charts"`
-	Quantiles []string `json:"quantiles"` // series
+type XAxis struct {
+	Name string `json:"name"`
+	Data []int  `json:"data"`
 }
 
-type MetricFileJson metricreplicator.ResultData
-
-// reportTemplateConfig passes to template
-type ReportTemplateConfig struct {
-	HtmlTitle string
-	ChartConfig ConfigFileJson
+type SeriesTemplate struct {
+	Name string    `json:"name"`
+	Data []float64 `json:"data"`
 }
 
-type ReportDataReader interface {
-	ReadReportData() (*ReportTemplateConfig, error)
+type ChartTemplate struct {
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Series      []SeriesTemplate `json:"series"`
+	YAxisName   string           `json:"yAxisName"`
 }
 
-func MakeReport(reader ReportDataReader, wr io.Writer)  error {
-	c, err := reader.ReadReportData()
+// TemplateData passes to template
+type TemplateData struct {
+	GitBranch     string
+	GitCommitHash string
+	ChartConfig   []ChartTemplate
+	xAxis         XAxis
+}
+
+type TemplateDataReader interface {
+	ReadTemplateData() (*TemplateData, error)
+}
+
+func mustMarshall(v interface{}) string {
+	buf, err := json.Marshal(v)
 	if err != nil {
-		return err
+		panic(err)
 	}
+	return string(buf)
+}
 
-	chartConfigBuf, err := json.Marshal(c.ChartConfig)
+func MakeReport(reader TemplateDataReader, wr io.Writer) error {
+	c, err := reader.ReadTemplateData()
 	if err != nil {
 		return err
 	}
 
 	templateData := struct {
-		HtmlTitle string
-		ChartConfig string
-	} {
-		HtmlTitle: c.HtmlTitle,
-		ChartConfig: string(chartConfigBuf),
+		GitBranch     string
+		GitCommitHash string
+		ChartConfig   string
+		XAxis         string
+	}{
+		GitBranch:     c.GitBranch,
+		GitCommitHash: c.GitCommitHash,
+		ChartConfig:   mustMarshall(c.ChartConfig),
+		XAxis:         mustMarshall(c.xAxis),
 	}
 
 	f, err := pkger.Open("/pkg/report/template.html")
@@ -58,7 +80,6 @@ func MakeReport(reader ReportDataReader, wr io.Writer)  error {
 		return err
 	}
 
-	// cfg := ReportConfig{"my report", ""}
 	tmpl, err := template.New("report").Parse(string(buf))
 	if err != nil {
 		return err
@@ -70,4 +91,3 @@ func MakeReport(reader ReportDataReader, wr io.Writer)  error {
 
 	return nil
 }
-
