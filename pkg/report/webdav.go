@@ -86,7 +86,10 @@ func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 		trimmed := strings.TrimPrefix(filename, NetworkSizePrefix)
 		numStr := strings.TrimSuffix(trimmed, JsonFileExtension)
 
-		res, _ := strconv.Atoi(numStr)
+		res, err := strconv.Atoi(numStr)
+		if err != nil {
+			panic(err)
+		}
 		return res
 	}
 
@@ -101,7 +104,7 @@ func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 		xValues = append(xValues, parseNumber(n))
 	}
 
-	filesData := make([]MetricFileJson, 0)
+	filesData := make([]MetricFileJson, 0, len(filenames))
 	for _, file := range filenames {
 		buf, err = w.fs.Read(path.Join(w.cfg.Webdav.Directory, file))
 		if err != nil {
@@ -145,6 +148,7 @@ func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 				Data: make([]float64, 0),
 			}
 			for k := 0; k < len(xValues); k++ {
+				// index [i+j] is used because records  for all quantiles go consistently
 				serie1.Data = append(serie1.Data, filesData[k].Records[i+j].Value)
 			}
 			ct.Series = append(ct.Series, serie1)
