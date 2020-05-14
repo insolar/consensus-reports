@@ -1,0 +1,9 @@
+git:
+  branch: "master"
+  hash: ""
+webdav:
+  host: ""
+  username: ""
+  password: ""
+  directory: ""
+  timeout: "1m"

@@ -1,86 +1,64 @@
+// Copyright 2020 Insolar Network Ltd.
+// All rights reserved.
+// This material is licensed under the Insolar License version 1.0,
+// available at https://github.com/insolar/assured-ledger/blob/master/LICENSE.md.
+
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
+	"github.com/insolar/insconfig"
 	"go.uber.org/zap/buffer"
 
-	"github.com/insolar/consensus-reports/pkg/middleware"
 	"github.com/insolar/consensus-reports/pkg/report"
 )
 
-// type Config = middleware.WebDavConfig
-
 func main() {
-	cfgPath := pflag.String("cfg", "", "Path to cfg file")
-	serveAddress := pflag.String("serve", "", "Serve html on address")
 
-	pflag.Parse()
-
-	if *cfgPath == "" {
-		log.Fatalln("empty path to cfg file")
+	var serveAddress = flag.String("serve", "", "Serve html on address")
+	cfg := report.Config{}
+	params := insconfig.Params{
+		EnvPrefix:       "report",
+		FileNotRequired: true,
+		ConfigPathGetter: &insconfig.FlagPathGetter{
+			GoFlags: flag.CommandLine,
+		},
+	}
+	insConfigurator := insconfig.New(params)
+	err := insConfigurator.Load(&cfg)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	vp := viper.New()
-	vp.SetConfigFile(*cfgPath)
-
-	vp.SetEnvPrefix("reports_webdav") // will be uppercased automatically
-	if err := vp.BindEnv("host"); err != nil {
-		log.Fatalf("failed to get webdav host: %v", err)
-	}
-	if err := vp.BindEnv("password"); err != nil {
-		log.Fatalf("failed to get webdav password: %v", err)
-	}
-	if err := vp.BindEnv("username"); err != nil {
-		log.Fatalf("failed to get webdav username: %v", err)
-	}
-
-	if err := vp.ReadInConfig(); err != nil {
-		log.Fatalf("failed to read config: %v", err)
-	}
-
-	var cfg middleware.Config
-	if err := vp.Unmarshal(&cfg); err != nil {
-		log.Fatalf("failed to unmarshal config: %v", err)
-	}
-
-	cfg.WebDav.Host = vp.GetString("host")
-	cfg.WebDav.Username = vp.GetString("username")
-	cfg.WebDav.Password = vp.GetString("password")
-
-	if err := cfg.Validate(); err != nil {
-		log.Fatalf("failed to validate config: %v", err)
-	}
-
-	client := report.CreateWebdavClient(cfg.WebDav, cfg.Commit)
+	client := report.CreateWebdavClient(cfg)
 
 	if serveAddress != nil && *serveAddress != "" {
 		fmt.Println("listen at http://" + *serveAddress)
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			err := report.MakeReport(client, w)
 			if err != nil {
-				panic(err)
+				log.Fatalln(err)
 			}
 		})
 
 		err := http.ListenAndServe(*serveAddress, nil)
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 	} else {
 		buff := &buffer.Buffer{}
 		err := report.MakeReport(client, buff)
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 
-		err = client.WriteReport(buff.Bytes()) // write to file
+		err = client.WriteReport(buff.Bytes())
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 	}
 }
