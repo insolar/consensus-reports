@@ -1,4 +1,8 @@
 # Consensus-reports
+
+[![linux-checks](https://github.com/insolar/consensus-reports/workflows/linux-checks/badge.svg)](https://github.com/insolar/consensus-reports/actions?query=workflow%3Alinux-checks+branch%3Amaster)
+[![codecov](https://codecov.io/gh/insolar/consensus-reports/branch/master/graph/badge.svg)](https://codecov.io/gh/insolar/consensus-reports)
+
 Tool for consensus reports generation
 It has two parts: metric replicator and ...
 
