@@ -23,13 +23,13 @@ import (
 
 const DefaultReportFileName = "index.html"
 const NetworkSizePrefix = "network_size_"
-const JsonFileExtension = ".json"
+const JSONFileExtension = ".json"
 const ReadTemplateDataErrorMessage = "Failed to read template data"
 
-type MetricFileJson metricreplicator.ResultData
+type MetricFileJSON metricreplicator.ResultData
 
-// ConfigFileJson read from config.json
-type ConfigFileJson struct {
+// ConfigFileJSON read from config.json
+type ConfigFileJSON struct {
 	ChartNames []string `json:"charts"`
 	Quantiles  []string `json:"quantiles"` // series
 }
@@ -67,7 +67,7 @@ type fileInfo struct {
 }
 
 func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
-	reportCfg, err := w.readConfigJson()
+	reportCfg, err := w.readConfigJSON()
 	if err != nil {
 		return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
 	}
@@ -80,8 +80,8 @@ func (w *WebdavClient) ReadTemplateData() (*TemplateData, error) {
 	return w.collectTemplateData(filenames, reportCfg)
 }
 
-func (w *WebdavClient) readConfigJson() (*ConfigFileJson, error) {
-	var reportCfg ConfigFileJson
+func (w *WebdavClient) readConfigJSON() (*ConfigFileJSON, error) {
+	var reportCfg ConfigFileJSON
 	buf, err := w.fs.Read(path.Join(w.cfg.Webdav.Directory, "/", replicator.DefaultConfigFilename))
 	if err != nil {
 		return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
@@ -103,7 +103,7 @@ func (w *WebdavClient) scanWebdavFiles() ([]fileInfo, error) {
 
 	parseNumber := func(filename string) int {
 		trimmed := strings.TrimPrefix(filename, NetworkSizePrefix)
-		numStr := strings.TrimSuffix(trimmed, JsonFileExtension)
+		numStr := strings.TrimSuffix(trimmed, JSONFileExtension)
 
 		res, err := strconv.Atoi(numStr)
 		if err != nil {
@@ -114,7 +114,7 @@ func (w *WebdavClient) scanWebdavFiles() ([]fileInfo, error) {
 
 	filenames := make([]fileInfo, 0)
 	for _, file := range files {
-		if strings.HasPrefix(file.Name(), NetworkSizePrefix) && strings.HasSuffix(file.Name(), JsonFileExtension) {
+		if strings.HasPrefix(file.Name(), NetworkSizePrefix) && strings.HasSuffix(file.Name(), JSONFileExtension) {
 			filenames = append(filenames, fileInfo{file.Name(), parseNumber(file.Name()), "network_size"})
 		}
 	}
@@ -122,7 +122,7 @@ func (w *WebdavClient) scanWebdavFiles() ([]fileInfo, error) {
 	return filenames, nil
 }
 
-func (w *WebdavClient) collectTemplateData(filenames []fileInfo, reportCfg *ConfigFileJson) (*TemplateData, error) {
+func (w *WebdavClient) collectTemplateData(filenames []fileInfo, reportCfg *ConfigFileJSON) (*TemplateData, error) {
 	sort.Slice(filenames, func(i, j int) bool {
 		return filenames[i].networkPropertyValue < filenames[j].networkPropertyValue
 	})
@@ -132,14 +132,14 @@ func (w *WebdavClient) collectTemplateData(filenames []fileInfo, reportCfg *Conf
 		xValues = append(xValues, n.networkPropertyValue)
 	}
 
-	filesData := make([]MetricFileJson, 0, len(filenames))
+	filesData := make([]MetricFileJSON, 0, len(filenames))
 	for _, file := range filenames {
 		buf, err := w.fs.Read(path.Join(w.cfg.Webdav.Directory, file.filename))
 		if err != nil {
 			return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
 		}
 
-		var f MetricFileJson
+		var f MetricFileJSON
 		err = json.Unmarshal(buf, &f)
 		if err != nil {
 			return nil, errors.Wrap(err, ReadTemplateDataErrorMessage)
