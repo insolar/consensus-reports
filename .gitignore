@@ -19,3 +19,6 @@
 
 # ide files
 *.idea/*
+
+# binary files
+bin/

@@ -28,3 +28,21 @@ config.json		network_size_10.json	network_size_5.json
 File for each time range in config.
 
 Remote directory will look the same, except the name will be from config file.
+
+## Report generator
+
+Report generator takes replicated data from webdav and generates html page report with charts.
+Html page will be saved to the same webdav directory.
+
+```
+make report
+export REPORT_WEBDAV_HOST=https://webdav.yandex.ru
+export REPORT_WEBDAV_USERNAME=fspecter
+export REPORT_WEBDAV_PASSWORD=awkward20
+export REPORT_WEBDAV_DIRECTORY=fake102 
+
+export REPORT_GIT_BRANCH=master
+export REPORT_GIT_HASH=977022b
+
+bin/report
+```

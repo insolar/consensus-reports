@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Consensus performance report</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.7.0/echarts.js"></script>
+
+    <style>
+        h1, h2, h3{text-align: center;}
+        #charts{display: flex; flex-direction: row; flex-wrap: wrap;}
+        .item{height: 40vh; width: 50%; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h3>
+        Consensus performance report for branch
+        &nbsp;<a target="_blank" href="https://github.com/insolar/assured-ledger/tree/{{.GitBranch}}">{{.GitBranch}}</a>
+        &nbsp;commit hash <a target="_blank" href="https://github.com/insolar/assured-ledger/commit/{{.GitCommitHash}}">{{.GitCommitHash}}</a>
+    </h3>
+    <div id="charts"></div>
+</div>
+
+<script>
+    const chartsContainer = document.getElementById('charts');
+
+    const seriesName = (q) => {
+        if (q === "") {
+            return q;
+        }
+        return q + ' quantile';
+    }
+
+    const addChart = (chartData, xAxis) => {
+        const option = {
+            title: {
+                id: chartData.name,
+                text: chartData.description,
+                // subtext: 'description',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+            },
+            toolbox: {
+                feature: {
+                    saveAsImage: {title: 'Save as PNG'},
+                    magicType: {
+                        type: [ 'line', 'bar', 'stack'],
+                        title: {line: 'line', stack: 'stack', bar: 'bar' }
+                    },
+                    restore: {title: 'restore'}
+                }
+            },
+            legend: {
+                top: '25',
+                data: chartData.series.map(q => seriesName(q.name))
+            },
+            xAxis: {
+                name: xAxis.name,
+                nameLocation: 'center',
+                data: xAxis.data // network sizes
+            },
+            yAxis: {type: 'value', name: chartData.yAxisName},
+            series: chartData.series.map(q => {
+                return {
+                    name: seriesName(q.name),
+                    type: 'line',
+                    data: q.data, // metric record value // todo:
+                    // markLine: { // todo: red flag
+                    //     silent: true,
+                    //     label: 'red flag',
+                    //     data: [{yAxis: 100}, {yAxis: 300}]
+                    // }
+                }
+            })
+        };
+
+        const chartDiv = document.createElement('div');
+        chartDiv.setAttribute('id', name);
+        chartDiv.setAttribute('class', 'item');
+        const child = chartsContainer.appendChild(chartDiv);
+
+        const chart = echarts.init(chartDiv);
+        chart.setOption(option);
+    }
+
+    const jsonConfig = JSON.parse('{{.ChartConfig}}');
+    const xAxis = JSON.parse('{{.XAxis}}')
+
+    jsonConfig.forEach(chart => addChart(chart, xAxis))
+
+
+</script>
+
+</body>
+</html>
