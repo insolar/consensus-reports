@@ -156,11 +156,12 @@ func (w *WebdavClient) collectTemplateData(filenames []fileInfo, reportCfg *Conf
 	var ct ChartTemplate
 	for i, v := range filesData[0].Records {
 		var quantiles []string
-		if v.Quantile == reportCfg.Quantiles[0] {
+		switch {
+		case v.Quantile == reportCfg.Quantiles[0]:
 			quantiles = append(quantiles, reportCfg.Quantiles...)
-		} else if v.Quantile == "" {
+		case v.Quantile == "":
 			quantiles = append(quantiles, "")
-		} else {
+		default:
 			continue
 		}
 
