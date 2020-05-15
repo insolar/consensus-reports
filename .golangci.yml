@@ -1,0 +1,33 @@
+run:
+  tests: false
+  timeout: 5m
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - gosec
+    - structcheck
+    - varcheck
+    - ineffassign
+    - deadcode
+    - typecheck
+    - golint
+    - interfacer
+    - unconvert
+    - goconst
+    - unparam
+    - nakedret
+    - scopelint
+    - gocritic
+
+issues:
+  exclude-rules:
+    - text: "S1021:"
+      linters:
+        - gosimple
+    - text: "G107:"
+      linters:
+        - gosec

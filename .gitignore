@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+coverage.html
 
 # Test binary, built with `go test -c`
 *.test
