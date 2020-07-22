@@ -37,7 +37,7 @@ jobs:
         with:
           upload_url: ${{steps.create_release.outputs.upload_url}}
           asset_path: ./bin/metricreplicator
-          asset_name: insolar
+          asset_name: metricreplicator
           asset_content_type: application/octet-stream
       - name: attach report binary to Github release
         uses: actions/upload-release-asset@v1.0.1
@@ -46,5 +46,5 @@ jobs:
         with:
           upload_url: ${{steps.create_release.outputs.upload_url}}
           asset_path: ./bin/report
-          asset_name: insolar
+          asset_name: report
           asset_content_type: application/octet-stream
