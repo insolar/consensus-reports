@@ -5,13 +5,23 @@ on:
       - '*'
 env:
   GO_VERSION: 1.14
+  CI_GOMAXPROCS: 0
+  INSOLAR_LOG_LEVEL: warn
 jobs:
   build-pack-release:
     name: build-pack-release
     runs-on: ubuntu-latest
+    env:
+      GOPATH: /home/runner/work/consensus-reports/consensus-reports/go
     steps:
       - name: checkout code
         uses: actions/checkout@master
+      - name: Set up go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{env.GO_VERSION}}
+      - name: Add bin to path
+        run: echo "::add-path::${{env.GOPATH}}/bin"
       - name: build code
         run:  make build
       - name: pack project
