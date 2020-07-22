@@ -7,7 +7,6 @@ env:
   GO_VERSION: 1.14
   CI_GOMAXPROCS: 0
   INSOLAR_LOG_LEVEL: warn
-  GOTEST: 'gotestsum --'
 jobs:
   build-pack-release:
     name: build-pack-release
