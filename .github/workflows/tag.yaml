@@ -26,10 +26,10 @@ jobs:
         run:  make build
       - name: pack project
         run: |
-          docker build -t consensus-reports:${{github.ref}} .
-          docker tag consensus-reports:${{github.ref}} insolar/consensus-reports:${{github.ref}}
+          docker build -t consensus-reports:$(git describe --tags) .
+          docker tag consensus-reports:$(git describe --tags) insolar/consensus-reports:$(git describe --tags)
           docker login -u ${{secrets.REGISTRY_USERNAME}} -p ${{secrets.REGISTRY_PASSWORD}}
-          docker push insolar/consensus-reports:${{github.ref}}
+          docker push insolar/consensus-reports:$(git describe --tags)
       - name: create GH release
         id: create_release
         uses: actions/create-release@becafb2
