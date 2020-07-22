@@ -1,0 +1,50 @@
+name: insolar
+on:
+  push:
+    tags:
+      - '*'
+env:
+  GO_VERSION: 1.14
+jobs:
+  build-pack-release:
+    name: build-pack-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@master
+      - name: build code
+        run:  make build
+      - name: pack project
+        run: |
+          docker build -t consensus-reports:${{github.ref}} .
+          docker tag consensus-reports:${{github.ref}} insolar/consensus-reports:${{github.ref}}
+          docker login -u ${{secrets.REGISTRY_USERNAME}} -p ${{secrets.REGISTRY_PASSWORD}}
+          docker push insolar/consensus-reports:${{github.ref}}
+      - name: create GH release
+        id: create_release
+        uses: actions/create-release@becafb2
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          tag_name: ${{github.ref}}
+          release_name: ${{github.ref}}
+          draft: false
+          prerelease: false
+      - name: attach metricreplicator binary to Github release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          upload_url: ${{steps.create_release.outputs.upload_url}}
+          asset_path: ./bin/metricreplicator
+          asset_name: metricreplicator
+          asset_content_type: application/octet-stream
+      - name: attach report binary to Github release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          upload_url: ${{steps.create_release.outputs.upload_url}}
+          asset_path: ./bin/report
+          asset_name: report
+          asset_content_type: application/octet-stream
