@@ -4,9 +4,9 @@ go 1.14
 
 require (
 	github.com/go-playground/universal-translator v0.17.0 // indirect
-	github.com/insolar/insconfig v0.0.0-20200513150834-977022bc1445
+	github.com/insolar/insconfig v0.0.0-20200617131009-dd635d1fc9e9
 	github.com/leodido/go-urn v1.2.0 // indirect
-	github.com/markbates/pkger v0.15.1
+	github.com/markbates/pkger v0.17.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/common v0.9.1
