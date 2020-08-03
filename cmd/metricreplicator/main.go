@@ -17,7 +17,7 @@ func main() {
 	removeAfter := flag.Bool("rm", true, "Option to remove tmp dir after work")
 	cfg := middleware.Config{}
 	params := insconfig.Params{
-		EnvPrefix:       "metricreplicator",
+		EnvPrefix:       "report",
 		FileNotRequired: true,
 		ConfigPathGetter: &insconfig.FlagPathGetter{
 			GoFlags: flag.CommandLine,
@@ -25,6 +25,9 @@ func main() {
 	}
 	insConfigurator := insconfig.New(params)
 	err := insConfigurator.Load(&cfg)
+	checkError(err)
+
+	err = cfg.Validate()
 	checkError(err)
 
 	err = insconfig.NewYamlDumper(cfg).DumpTo(log.Writer())

@@ -18,7 +18,15 @@ Config sets host for prometheus, webdav auth options, time periods from which to
  
 ### Run metric replicator
 ```
-go run cmd/metricreplicator/main.go --cfg=cmd/metricreplicator/config.yml
+export REPORT_WEBDAV_HOST=https://webdav.yandex.ru
+export REPORT_WEBDAV_USERNAME=fspecter
+export REPORT_WEBDAV_PASSWORD=awkward20
+export REPORT_WEBDAV_DIRECTORY=fake102 
+
+export REPORT_GIT_BRANCH=master
+export REPORT_GIT_HASH=977022b
+
+go run cmd/metricreplicator/main.go --config=cmd/metricreplicator/config.yml
 ```
 
 Use `--rm=false` option if you want to save created file locally. Option is `true` by default.
