@@ -31,6 +31,9 @@ func main() {
 	err := insConfigurator.Load(&cfg)
 	checkError(err)
 
+	err = insconfig.NewYamlDumper(cfg).DumpTo(log.Writer())
+	checkError(err)
+
 	client := report.CreateWebdavClient(cfg)
 
 	if serveAddress != nil && *serveAddress != "" {

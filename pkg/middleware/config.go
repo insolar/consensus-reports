@@ -25,7 +25,7 @@ type RangeConfig struct {
 type WebDavConfig struct {
 	Host      string        `mapstructure:"host" validate:"required"`
 	Username  string        `mapstructure:"username" validate:"required"`
-	Password  string        `mapstructure:"password" validate:"required"`
+	Password  string        `mapstructure:"password" validate:"required" insconfigsecret:""`
 	Timeout   time.Duration `mapstructure:"timeout" validate:"required"`
 	Directory string        `directory:"host"`
 }
