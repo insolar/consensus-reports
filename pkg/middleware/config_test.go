@@ -38,7 +38,10 @@ func TestConfig_Validate(t *testing.T) {
 				Password: "pwd",
 				Timeout:  time.Minute,
 			},
-			Commit: "hash",
+			Git: struct {
+				Branch string
+				Hash   string
+			}{"master", "hash"},
 		}
 		err := cfg.Validate()
 		require.NoError(t, err)
@@ -54,7 +57,10 @@ func TestConfig_Validate(t *testing.T) {
 				Username: "user",
 				Password: "pwd",
 			},
-			Commit: "hash",
+			Git: struct {
+				Branch string
+				Hash   string
+			}{"master", "hash"},
 		}
 		err := cfg.Validate()
 		require.Error(t, err)
@@ -82,7 +88,10 @@ func TestConfig_Validate(t *testing.T) {
 				Host:     "test",
 				Username: "user",
 			},
-			Commit: "hash",
+			Git: struct {
+				Branch string
+				Hash   string
+			}{"master", "hash"},
 		}
 		err := cfg.Validate()
 		require.Error(t, err)
@@ -110,7 +119,7 @@ func TestNewConfig(t *testing.T) {
 		cfgPath := "fake_config.yml"
 		_, err := NewConfig(cfgPath)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to read cfg file")
+		require.Contains(t, err.Error(), "failed to load config")
 	})
 }
 

@@ -1,12 +1,10 @@
 package middleware
 
 import (
-	"io/ioutil"
-	"time"
-
+	"github.com/insolar/insconfig"
 	"github.com/pkg/errors"
 	"gopkg.in/go-playground/validator.v9"
-	"gopkg.in/yaml.v2"
+	"time"
 
 	"github.com/insolar/consensus-reports/pkg/replicator"
 )
@@ -17,7 +15,7 @@ type PropertyConfig struct {
 }
 
 type RangeConfig struct {
-	StartTime  int64            `mapstructure:"start_time" validate:"required"`
+	StartTime  int64            `mapstructure:"starttime" validate:"required"`
 	Interval   time.Duration    `mapstructure:"interval" validate:"required"`
 	Properties []PropertyConfig `mapstructure:"props" validate:"min=1,dive,required"`
 }
@@ -25,7 +23,7 @@ type RangeConfig struct {
 type WebDavConfig struct {
 	Host      string        `mapstructure:"host" validate:"required"`
 	Username  string        `mapstructure:"username" validate:"required"`
-	Password  string        `mapstructure:"password" validate:"required"`
+	Password  string        `mapstructure:"password" validate:"required" insconfigsecret:""`
 	Timeout   time.Duration `mapstructure:"timeout" validate:"required"`
 	Directory string        `directory:"host"`
 }
@@ -42,22 +40,36 @@ type PrometheusConfig struct {
 
 type Config struct {
 	Quantiles  []string         `mapstructure:"quantiles" validate:"min=1,dive,required"`
-	TmpDir     string           `mapstructure:"tmp_directory" validate:"required"`
+	TmpDir     string           `mapstructure:"tmpdir" validate:"required"`
 	Prometheus PrometheusConfig `mapstructure:"prometheus" validate:"required"`
 	Groups     []GroupConfig    `mapstructure:"groups" validate:"min=1,dive,required"`
 	WebDav     WebDavConfig     `mapstructure:"webdav" validate:"required"`
-	Commit     string           `mapstructure:"commit_hash" validate:"required"`
+	Git    struct {
+		Branch string
+		Hash   string
+	}
+}
+
+type pathGetter struct {
+	path string
+}
+func (g *pathGetter) GetConfigPath() string {
+	return g.path
 }
 
 func NewConfig(cfgPath string) (Config, error) {
-	rawData, err := ioutil.ReadFile(cfgPath)
-	if err != nil {
-		return Config{}, errors.Wrap(err, "failed to read cfg file")
+	cfg := Config{}
+	params := insconfig.Params{
+		EnvPrefix:       "metricreplicator",
+		FileNotRequired: true,
+		ConfigPathGetter: &pathGetter{
+			path: cfgPath,
+		},
 	}
-
-	var cfg Config
-	if err := yaml.Unmarshal(rawData, &cfg); err != nil {
-		return Config{}, errors.Wrap(err, "failed to unmarshal cfg file")
+	insConfigurator := insconfig.New(params)
+	err := insConfigurator.Load(&cfg)
+	if err != nil {
+		return Config{}, errors.Wrap(err, "failed to load config")
 	}
 
 	return cfg, nil
@@ -76,7 +88,7 @@ func (cfg Config) LoaderConfig() replicator.LoaderConfig {
 		URL:           cfg.WebDav.Host,
 		User:          cfg.WebDav.Username,
 		Password:      cfg.WebDav.Password,
-		RemoteDirName: cfg.Commit,
+		RemoteDirName: cfg.Git.Hash,
 		Timeout:       cfg.WebDav.Timeout,
 	}
 }
