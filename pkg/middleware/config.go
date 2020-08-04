@@ -44,7 +44,7 @@ type Config struct {
 	Prometheus PrometheusConfig `mapstructure:"prometheus" validate:"required"`
 	Groups     []GroupConfig    `mapstructure:"groups" validate:"min=1,dive,required"`
 	WebDav     WebDavConfig     `mapstructure:"webdav" validate:"required"`
-	Git    struct {
+	Git        struct {
 		Branch string
 		Hash   string
 	}
@@ -53,6 +53,7 @@ type Config struct {
 type pathGetter struct {
 	path string
 }
+
 func (g *pathGetter) GetConfigPath() string {
 	return g.path
 }
@@ -88,7 +89,7 @@ func (cfg Config) LoaderConfig() replicator.LoaderConfig {
 		URL:           cfg.WebDav.Host,
 		User:          cfg.WebDav.Username,
 		Password:      cfg.WebDav.Password,
-		RemoteDirName: cfg.Git.Hash,
+		RemoteDirName: cfg.WebDav.Directory,
 		Timeout:       cfg.WebDav.Timeout,
 	}
 }
