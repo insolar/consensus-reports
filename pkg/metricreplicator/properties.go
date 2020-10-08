@@ -54,21 +54,21 @@ var (
 	phase01Duration = consensusProperty{
 		Name:        "phase01_duration",
 		Formula:     "histogram_quantile(%s, sum(rate(insolar_phase01_latency_bucket[20s])) by (le))",
-		Description: "Duration of consensus phase01",
+		Description: "Duration of consensus phase 1",
 		Unit:        "ms",
 		Quantile:    true,
 	}
 	phase2Duration = consensusProperty{
 		Name:        "phase2_duration",
 		Formula:     "histogram_quantile(%s, sum(rate(insolar_phase2_latency_bucket[20s])) by (le))",
-		Description: "Duration of consensus phase2",
+		Description: "Duration of consensus phase 2",
 		Unit:        "ms",
 		Quantile:    true,
 	}
 	phase3Duration = consensusProperty{
 		Name:        "phase3_duration",
 		Formula:     "histogram_quantile(%s, sum(rate(insolar_phase3_latency_bucket[20s])) by (le))",
-		Description: "Duration of consensus phase3",
+		Description: "Duration of consensus phase 3",
 		Unit:        "ms",
 		Quantile:    true,
 	}
