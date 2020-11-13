@@ -4,8 +4,8 @@ on:
     branches:
       - master
   pull_request:
-  schedule:
-    - cron: '0 2,4,6 * * *'
+#  schedule:
+#    - cron: '0 2,4,6 * * *'
 env:
   GO_VERSION: 1.14
   CI_GOMAXPROCS: 0
